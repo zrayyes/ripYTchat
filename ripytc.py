@@ -60,9 +60,7 @@ for video_id in sys.argv[1::]:
             print("Video not found!")
             exit(1)
 
-        live_chat_url = (
-            f"https://www.youtube.com/youtubei/v1/live_chat/get_live_chat_replay?key={api_key}"
-        )
+        live_chat_url = f"https://www.youtube.com/youtubei/v1/live_chat/get_live_chat_replay?key={api_key}"
 
         counter = 0
         with open(f"{video_id}.txt", "w", encoding="utf-8") as f:
@@ -72,22 +70,26 @@ for video_id in sys.argv[1::]:
                 r_json_body = r.json()
                 actions = []
                 try:
-                    actions = r_json_body["continuationContents"]["liveChatContinuation"][
-                        "actions"
-                    ]
+                    actions = r_json_body["continuationContents"][
+                        "liveChatContinuation"
+                    ]["actions"]
                 except KeyError:
                     break
                 for action in actions:
                     try:
-                        live_chat_message_renderer = action["replayChatItemAction"]["actions"][
-                            0
-                        ]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]
-                        author_name = live_chat_message_renderer["authorName"]["simpleText"]
+                        live_chat_message_renderer = action["replayChatItemAction"][
+                            "actions"
+                        ][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]
+                        author_name = live_chat_message_renderer["authorName"][
+                            "simpleText"
+                        ]
                         message = get_messages_from_renderer(live_chat_message_renderer)
                         offset_time_msec = int(
                             action["replayChatItemAction"]["videoOffsetTimeMsec"]
                         )
-                        offset_datetime = datetime.timedelta(milliseconds=offset_time_msec)
+                        offset_datetime = datetime.timedelta(
+                            milliseconds=offset_time_msec
+                        )
                         offset_hh_mm_ss = str(offset_datetime).split(".")[0]
                         out = f"[{offset_hh_mm_ss} | {offset_datetime.seconds}] {author_name} --- {message} \n"
                         f.write(out)
@@ -98,7 +100,9 @@ for video_id in sys.argv[1::]:
                 try:
                     tmp_continuation = r_json_body["continuationContents"][
                         "liveChatContinuation"
-                    ]["continuations"][0]["liveChatReplayContinuationData"]["continuation"]
+                    ]["continuations"][0]["liveChatReplayContinuationData"][
+                        "continuation"
+                    ]
                     continuation = tmp_continuation
                 except KeyError:
                     continuation = None
