@@ -2,6 +2,7 @@ import datetime
 import re
 import sys
 from time import sleep
+from timeit import default_timer
 from typing import Dict
 
 import requests
@@ -43,6 +44,7 @@ if len(sys.argv) < 2:
     print("Example: python ripytc.py dPX0_IEXVRo")
     exit(1)
 
+start = default_timer()
 for video_id in sys.argv[1::]:
     try:
         video_url = f"https://www.youtube.com/watch?v={video_id}"
@@ -111,5 +113,6 @@ for video_id in sys.argv[1::]:
                 sleep(0.25)
     except KeyboardInterrupt:
         break
+stop = default_timer()
 
-print("Done!")
+print(f"Done! {stop - start:.2f} seconds taken.")
