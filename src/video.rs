@@ -57,6 +57,8 @@ fn get_key_value_from_body<'a>(
 mod tests {
 
     use super::*;
+    use crate::youtube::MockYoutubeApi;
+    use mockall::predicate::*;
 
     #[test]
     fn test_get_key_value_from_body_valid() -> Result<(), String> {
@@ -78,5 +80,25 @@ mod tests {
             error,
             format!("Key '{}' not found in HTML body.", key_name)
         ))
+    }
+
+    #[tokio::test]
+    async fn test_video_from_id_valid() -> Result<(), Box<dyn std::error::Error>> {
+        let fake_body = r#""continuation":"abc","INNERTUBE_API_KEY":"xyz","title":"MY_TITLE","author":"MY_CHANNEL","channelId":"0001","#;
+        let mut mock_api = MockYoutubeApi::new();
+        mock_api
+            .expect_get_video_body()
+            .with(eq("12345"))
+            .times(1)
+            .returning(|_| Ok(fake_body.to_string()));
+
+        let video = Video::from_id(mock_api, "12345").await?;
+        assert_eq!("12345", video.id);
+        assert_eq!("abc", video.first_continuation_key);
+        assert_eq!("xyz", video.api_key);
+        assert_eq!("MY_TITLE", video.title);
+        assert_eq!("MY_CHANNEL", video.channel_name);
+        assert_eq!("0001", video.channel_id);
+        Ok(())
     }
 }
