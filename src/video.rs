@@ -1,4 +1,4 @@
-use regex::{Error, Regex};
+use regex::Regex;
 
 #[derive(Debug)]
 pub struct Video {
@@ -62,4 +62,32 @@ async fn get_video_body(video_id: &str) -> Result<String, Box<dyn std::error::Er
         .expect("Failed to get video page text.");
 
     Ok(body)
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_get_key_value_from_body_valid() -> Result<(), String> {
+        let body = r#"{"continuation":"abc123",""#;
+        let continuation_key = get_key_value_from_body("continuation", &body)?
+            .unwrap()
+            .as_str();
+
+        Ok(assert_eq!(continuation_key, "abc123"))
+    }
+
+    #[test]
+    fn test_get_key_value_from_body_key_missing() -> Result<(), String> {
+        let key_name = "continuation";
+        let body = r#"{"000":"abc123",""#;
+        let error = get_key_value_from_body(key_name, &body).unwrap_err();
+
+        Ok(assert_eq!(
+            error,
+            format!("Key '{}' not found in HTML body.", key_name)
+        ))
+    }
 }
