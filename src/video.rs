@@ -1,3 +1,4 @@
+use crate::youtube::YoutubeApi;
 use regex::Regex;
 
 #[derive(Debug)]
@@ -11,8 +12,11 @@ pub struct Video {
 }
 
 impl Video {
-    pub async fn from_id(video_id: &str) -> Result<Video, Box<dyn std::error::Error>> {
-        let body = get_video_body(&video_id).await?;
+    pub async fn from_id<T: YoutubeApi>(
+        youtube_api: T,
+        video_id: &str,
+    ) -> Result<Video, Box<dyn std::error::Error>> {
+        let body = youtube_api.get_video_body(&video_id).await?;
         let continuation_key = get_key_value_from_body("continuation", &body)?
             .unwrap()
             .as_str();
@@ -47,21 +51,6 @@ fn get_key_value_from_body<'a>(
         None => return Err(format!("Key '{}' not found in HTML body.", key)),
     };
     Ok(caps.get(1))
-}
-
-async fn get_video_body(video_id: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let video_url = format!("https://www.youtube.com/watch?v={}", &video_id);
-
-    let response = reqwest::get(&video_url)
-        .await
-        .expect("Failed to fetch video page from video ID.");
-
-    let body = response
-        .text()
-        .await
-        .expect("Failed to get video page text.");
-
-    Ok(body)
 }
 
 #[cfg(test)]

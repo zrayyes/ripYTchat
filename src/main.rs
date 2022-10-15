@@ -1,8 +1,10 @@
 use std::{env, process::exit};
 
 pub mod video;
+pub mod youtube;
 
 use video::Video;
+use youtube::YoutubeApiClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -14,7 +16,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let video_id = &args[1];
-    let video = Video::from_id(video_id).await;
+    let ytc = YoutubeApiClient {};
+    let video = Video::from_id(ytc, video_id).await;
     print!("{:?}", video);
     //TODO: get_live_chat_replay
     //TODO: parse body
