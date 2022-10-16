@@ -5,15 +5,15 @@ use regex::Regex;
 pub struct Video {
     id: String,
     api_key: String,
-    first_continuation_key: String,
+    continuation_key: String,
     title: String,
     channel_name: String,
     channel_id: String,
 }
 
 impl Video {
-    pub async fn from_id<T: YoutubeApi>(
-        youtube_api: T,
+    pub async fn from_id<Api: YoutubeApi>(
+        youtube_api: Api,
         video_id: &str,
     ) -> Result<Video, Box<dyn std::error::Error>> {
         let body = youtube_api.get_video_body(&video_id).await?;
@@ -32,7 +32,7 @@ impl Video {
         Ok(Video {
             id: video_id.to_string(),
             api_key: api_key.to_string(),
-            first_continuation_key: continuation_key.to_string(),
+            continuation_key: continuation_key.to_string(),
             title: title.to_string(),
             channel_name: channel_name.to_string(),
             channel_id: channel_id.to_string(),
@@ -94,7 +94,7 @@ mod tests {
 
         let video = Video::from_id(mock_api, "12345").await?;
         assert_eq!("12345", video.id);
-        assert_eq!("abc", video.first_continuation_key);
+        assert_eq!("abc", video.continuation_key);
         assert_eq!("xyz", video.api_key);
         assert_eq!("MY_TITLE", video.title);
         assert_eq!("MY_CHANNEL", video.channel_name);
