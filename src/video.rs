@@ -1,4 +1,4 @@
-use crate::youtube::YoutubeApi;
+use crate::youtube::api::YoutubeApi;
 use regex::Regex;
 
 #[derive(Debug)]
@@ -57,7 +57,7 @@ fn get_key_value_from_body<'a>(
 mod tests {
 
     use super::*;
-    use crate::youtube::MockYoutubeApi;
+    use crate::youtube::api::MockYoutubeApi;
     use mockall::predicate::*;
 
     #[test]

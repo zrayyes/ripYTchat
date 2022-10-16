@@ -4,7 +4,7 @@ pub mod video;
 pub mod youtube;
 
 use video::Video;
-use youtube::YoutubeApiClient;
+use youtube::api::YoutubeApiClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
