@@ -17,10 +17,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let video_id = &args[1];
     let ytc: YoutubeApiClient = YoutubeApiClient::init();
-    let video = Video::from_id(ytc, video_id).await;
+    let video = Video::from_id(&ytc, video_id).await?;
     print!("{:?}", video);
-    //TODO: get_live_chat_replay
-    //TODO: parse body
+    let response = video.get_next_continuation(&ytc).await?;
+    print!("{:?}", response);
+    // TODO: Reorganize video struct, add manager
     //TODO: Write to file
     Ok(())
 }

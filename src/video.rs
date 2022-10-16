@@ -1,4 +1,4 @@
-use crate::youtube::api::YoutubeApi;
+use crate::youtube::{api::YoutubeApi, structs::ContiuationResponse};
 use regex::Regex;
 
 #[derive(Debug)]
@@ -13,7 +13,7 @@ pub struct Video {
 
 impl Video {
     pub async fn from_id<Api: YoutubeApi>(
-        youtube_api: Api,
+        youtube_api: &Api,
         video_id: &str,
     ) -> Result<Video, Box<dyn std::error::Error>> {
         let body = youtube_api.get_video_body(&video_id).await?;
@@ -37,6 +37,16 @@ impl Video {
             channel_name: channel_name.to_string(),
             channel_id: channel_id.to_string(),
         })
+    }
+
+    pub async fn get_next_continuation<Api: YoutubeApi>(
+        &self,
+        youtube_api: &Api,
+    ) -> Result<ContiuationResponse, Box<dyn std::error::Error>> {
+        let out = youtube_api
+            .get_live_chat_continuation(&self.api_key, &self.continuation_key)
+            .await?;
+        Ok(out)
     }
 }
 
@@ -92,7 +102,7 @@ mod tests {
             .times(1)
             .returning(|_| Ok(fake_body.to_string()));
 
-        let video = Video::from_id(mock_api, "12345").await?;
+        let video = Video::from_id(&mock_api, "12345").await?;
         assert_eq!("12345", video.id);
         assert_eq!("abc", video.continuation_key);
         assert_eq!("xyz", video.api_key);

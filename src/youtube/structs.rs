@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Response {
+pub struct ContiuationResponse {
     pub continuation_contents: ContinuationContents,
     pub tracking_params: String,
 }
@@ -139,7 +139,7 @@ mod tests {
     fn test_serde_deserialize_works() -> Result<(), Box<dyn Error>> {
         let file_path = Path::new("./tests/data/post_body");
         let response: String = fs::read_to_string(file_path)?.parse()?;
-        let deserialized: Response = serde_json::from_str(&response).unwrap();
+        let deserialized: ContiuationResponse = serde_json::from_str(&response).unwrap();
 
         assert_eq!(
             deserialized.tracking_params,
