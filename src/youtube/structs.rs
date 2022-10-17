@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct ContiuationResponse {
     pub continuation_contents: ContinuationContents,
-    pub tracking_params: String,
+    pub tracking_params: Option<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -17,7 +17,7 @@ pub struct ContinuationContents {
 #[serde(rename_all = "camelCase")]
 pub struct LiveChatContinuation {
     pub continuations: Vec<Continuation>,
-    pub actions: Vec<Action>,
+    pub actions: Option<Vec<Action>>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -96,7 +96,7 @@ pub struct Run {
 #[serde(rename_all = "camelCase")]
 pub struct Emoji {
     pub emoji_id: String,
-    pub shortcuts: Vec<String>,
+    pub shortcuts: Option<Vec<String>>,
     pub image: Image,
 }
 
@@ -143,13 +143,15 @@ mod tests {
 
         assert_eq!(
             deserialized.tracking_params,
-            "CAAQ0b4BIhMI35XI_5Pl-gIV0fERCB2MTQd-"
+            Some("CAAQ0b4BIhMI35XI_5Pl-gIV0fERCB2MTQd-".to_string())
         );
         assert_eq!(
             deserialized
                 .continuation_contents
                 .live_chat_continuation
                 .actions
+                .as_ref()
+                .unwrap()
                 .len(),
             101
         );
@@ -160,6 +162,7 @@ mod tests {
             .continuation_contents
             .live_chat_continuation
             .actions
+            .unwrap()
         {
             for chat_item_action in action.replay_chat_item_action.actions {
                 let author_name = match chat_item_action.add_chat_item_action {

@@ -1,3 +1,8 @@
+use std::{
+    fmt,
+    io::{Error, ErrorKind},
+};
+
 use crate::youtube::{api::YoutubeApi, structs::ContiuationResponse};
 use regex::Regex;
 
@@ -5,49 +10,63 @@ use regex::Regex;
 pub struct Video {
     id: String,
     api_key: String,
-    continuation_key: String,
+    continuation_key: Option<String>,
     title: String,
     channel_name: String,
     channel_id: String,
 }
 
 impl Video {
-    pub async fn from_id<Api: YoutubeApi>(
-        youtube_api: &Api,
-        video_id: &str,
-    ) -> Result<Video, Box<dyn std::error::Error>> {
-        let body = youtube_api.get_video_body(&video_id).await?;
-        let continuation_key = get_key_value_from_body("continuation", &body)?
-            .unwrap()
-            .as_str();
-        let api_key = get_key_value_from_body("INNERTUBE_API_KEY", &body)?
-            .unwrap()
-            .as_str();
-        let title = get_key_value_from_body("title", &body)?.unwrap().as_str();
-        let channel_name = get_key_value_from_body("author", &body)?.unwrap().as_str();
-        let channel_id = get_key_value_from_body("channelId", &body)?
-            .unwrap()
-            .as_str();
-
-        Ok(Video {
-            id: video_id.to_string(),
-            api_key: api_key.to_string(),
-            continuation_key: continuation_key.to_string(),
-            title: title.to_string(),
-            channel_name: channel_name.to_string(),
-            channel_id: channel_id.to_string(),
-        })
+    pub fn set_continuation_key(&mut self, key: Option<String>) {
+        self.continuation_key = key;
     }
+}
 
-    pub async fn get_next_continuation<Api: YoutubeApi>(
-        &self,
-        youtube_api: &Api,
-    ) -> Result<ContiuationResponse, Box<dyn std::error::Error>> {
-        let out = youtube_api
-            .get_live_chat_continuation(&self.api_key, &self.continuation_key)
-            .await?;
-        Ok(out)
+impl fmt::Display for Video {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}, {}", self.channel_name, self.title)
     }
+}
+
+pub async fn video_from_id<Api: YoutubeApi>(
+    youtube_api: &Api,
+    video_id: &str,
+) -> Result<Video, Box<dyn std::error::Error>> {
+    let body = youtube_api.get_video_body(&video_id).await?;
+    let continuation_key = get_key_value_from_body("continuation", &body)?
+        .unwrap()
+        .as_str();
+    let api_key = get_key_value_from_body("INNERTUBE_API_KEY", &body)?
+        .unwrap()
+        .as_str();
+    let title = get_key_value_from_body("title", &body)?.unwrap().as_str();
+    let channel_name = get_key_value_from_body("author", &body)?.unwrap().as_str();
+    let channel_id = get_key_value_from_body("channelId", &body)?
+        .unwrap()
+        .as_str();
+
+    Ok(Video {
+        id: video_id.to_string(),
+        api_key: api_key.to_string(),
+        continuation_key: Some(continuation_key.to_string()),
+        title: title.to_string(),
+        channel_name: channel_name.to_string(),
+        channel_id: channel_id.to_string(),
+    })
+}
+
+pub async fn get_next_continuation<Api: YoutubeApi>(
+    video: &Video,
+    youtube_api: &Api,
+) -> Result<Option<ContiuationResponse>, Box<dyn std::error::Error>> {
+    let continuation_key = match &video.continuation_key {
+        Some(continuation_key) => continuation_key.clone(),
+        None => return Err(Box::new(Error::new(ErrorKind::Other, "oh no!"))),
+    };
+    let out = youtube_api
+        .get_live_chat_continuation(&video.api_key, &continuation_key)
+        .await?;
+    Ok(Some(out))
 }
 
 fn get_key_value_from_body<'a>(
@@ -56,6 +75,7 @@ fn get_key_value_from_body<'a>(
 ) -> Result<Option<regex::Match<'a>>, String> {
     let re_str = format!(r#""{}":"(.*?)","#, key);
     let re = Regex::new(&re_str).expect(&format!("Invalid regex: {}", &re_str));
+    // TODO: Add proper error handling
     let caps = match re.captures(text) {
         Some(caps) => caps,
         None => return Err(format!("Key '{}' not found in HTML body.", key)),
@@ -102,9 +122,9 @@ mod tests {
             .times(1)
             .returning(|_| Ok(fake_body.to_string()));
 
-        let video = Video::from_id(&mock_api, "12345").await?;
+        let video = video_from_id(&mock_api, "12345").await?;
         assert_eq!("12345", video.id);
-        assert_eq!("abc", video.continuation_key);
+        assert_eq!("abc", video.continuation_key.unwrap());
         assert_eq!("xyz", video.api_key);
         assert_eq!("MY_TITLE", video.title);
         assert_eq!("MY_CHANNEL", video.channel_name);
