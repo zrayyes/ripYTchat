@@ -24,7 +24,7 @@ pub struct YoutubeApiClient {
 impl YoutubeApi for YoutubeApiClient {
     fn init() -> Self {
         let client = reqwest::Client::new();
-        YoutubeApiClient { client: client }
+        YoutubeApiClient { client }
     }
 
     async fn get_video_body(&self, video_id: &str) -> Result<String, Box<dyn std::error::Error>> {
@@ -60,7 +60,7 @@ impl YoutubeApi for YoutubeApiClient {
             .send()
             .await.expect("Failed to send get_live_chat_replay request.").text().await.expect("Failed to extract text from get_live_chat_replay.");
 
-        let deserialized: ContiuationResponse = serde_json::from_str(&res)
+        let deserialized: ContiuationResponse = serde_json::from_str(res)
             .expect("Failed to deserialize JSON response from get_live_chat_replay.");
         Ok(deserialized)
     }

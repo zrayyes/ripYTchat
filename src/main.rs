@@ -27,25 +27,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .continuations
             .first()
         {
-            Some(continuation) => match &continuation.live_chat_replay_continuation_data {
-                Some(continuation_data) => Some(continuation_data.continuation.to_string()),
-                None => None,
-            },
+            Some(continuation) => continuation
+                .live_chat_replay_continuation_data
+                .as_ref()
+                .map(|continuation_data| continuation_data.continuation.to_string()),
             None => None,
         };
+
+        if continuation.is_none() {
+            break;
+        }
         println!(
             "{}",
             response
                 .continuation_contents
                 .live_chat_continuation
                 .actions
-                .unwrap_or(vec![])
+                .unwrap_or_default()
                 .len()
         );
-
-        if continuation.is_none() {
-            break;
-        }
         // TODO: Move elsewhere
         video.set_continuation_key(continuation);
     }
