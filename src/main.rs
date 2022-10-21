@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let youtube_api: YoutubeApiClient = YoutubeApiClient::init();
     let handler = RequestHandler { youtube_api };
     let service = Service { store, handler };
-    service.store_chat_messages(video_id).await?;
+    service.run(video_id).await?;
 
     Ok(())
 }

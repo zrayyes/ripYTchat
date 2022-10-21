@@ -1,3 +1,6 @@
+use std::collections::HashSet;
+
+use crate::store::models::{Aggregate, Channel, Emote, Message, Video};
 use crate::youtube::api::YoutubeApi;
 use regex::Regex;
 
@@ -16,7 +19,7 @@ where
         &self,
         video_id: &str,
     ) -> Result<VideoInfo, Box<dyn std::error::Error>> {
-        let body = &self
+        let body = self
             .youtube_api
             .get_video_page_body(video_id)
             .await
@@ -41,6 +44,27 @@ where
             channel_name: channel_name.to_string(),
             channel_id: channel_id.to_string(),
         })
+    }
+
+    pub async fn get_all_chat_messages(
+        &self,
+        video_info: VideoInfo,
+    ) -> Result<Aggregate, Box<dyn std::error::Error>> {
+        let video = Video::new(video_info.id, video_info.title);
+        let channel = Channel::new(video_info.channel_id, video_info.channel_name);
+        let messages: Vec<Message> = vec![];
+        let emotes: HashSet<Emote> = HashSet::new();
+        let mut continuation_key = video_info.continuation_key;
+
+        //TODO: Parse
+
+        let aggregate = Aggregate {
+            video,
+            channel,
+            messages,
+            emotes,
+        };
+        Ok(aggregate)
     }
 }
 

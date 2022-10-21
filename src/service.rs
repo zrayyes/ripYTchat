@@ -16,12 +16,9 @@ where
     S: Store,
     Y: YoutubeApi,
 {
-    pub async fn store_chat_messages(
-        &self,
-        video_id: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let video_info = &self.handler.get_video_info(&video_id).await?;
-        print!("{:?}", video_info);
+    pub async fn run(&self, video_id: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let video_info = self.handler.get_video_info(&video_id).await?;
+        let video_messages = self.handler.get_all_chat_messages(video_info).await?;
         Ok(())
     }
 }
