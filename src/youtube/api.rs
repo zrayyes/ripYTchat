@@ -8,7 +8,10 @@ use mockall::automock;
 #[async_trait]
 pub trait YoutubeApi {
     fn init() -> Self;
-    async fn get_video_body(&self, video_id: &str) -> Result<String, Box<dyn std::error::Error>>;
+    async fn get_video_page_body(
+        &self,
+        video_id: &str,
+    ) -> Result<String, Box<dyn std::error::Error>>;
     async fn get_live_chat_continuation(
         &self,
         api_key: &str,
@@ -27,7 +30,10 @@ impl YoutubeApi for YoutubeApiClient {
         YoutubeApiClient { client }
     }
 
-    async fn get_video_body(&self, video_id: &str) -> Result<String, Box<dyn std::error::Error>> {
+    async fn get_video_page_body(
+        &self,
+        video_id: &str,
+    ) -> Result<String, Box<dyn std::error::Error>> {
         let video_url = format!("https://www.youtube.com/watch?v={}", &video_id);
 
         let body = &self
@@ -35,10 +41,10 @@ impl YoutubeApi for YoutubeApiClient {
             .get(&video_url)
             .send()
             .await
-            .expect("Failed to send get_video_body request.")
+            .expect("Failed to send get_video_page_body request.")
             .text()
             .await
-            .expect("Failed to extract text from get_video_body.");
+            .expect("Failed to extract text from get_video_page_body.");
 
         Ok(body.to_string())
     }

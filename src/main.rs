@@ -1,9 +1,13 @@
 use std::{env, process::exit};
 
-pub mod video;
+pub mod handler;
+pub mod service;
+pub mod store;
 pub mod youtube;
 
-use video::{get_next_continuation, video_from_id};
+use handler::RequestHandler;
+use service::Service;
+use store::SQLStore;
 use youtube::api::{YoutubeApi, YoutubeApiClient};
 
 #[tokio::main]
@@ -16,41 +20,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let video_id = &args[1];
-    let ytc: YoutubeApiClient = YoutubeApiClient::init();
-    let mut video = video_from_id(&ytc, video_id).await?;
-    print!("{}", video);
-    loop {
-        let response = get_next_continuation(&video, &ytc).await?.unwrap();
-        let continuation = match response
-            .continuation_contents
-            .live_chat_continuation
-            .continuations
-            .first()
-        {
-            Some(continuation) => continuation
-                .live_chat_replay_continuation_data
-                .as_ref()
-                .map(|continuation_data| continuation_data.continuation.to_string()),
-            None => None,
-        };
+    let store: SQLStore = SQLStore {};
+    let youtube_api: YoutubeApiClient = YoutubeApiClient::init();
+    let handler = RequestHandler { youtube_api };
+    let service = Service { store, handler };
+    service.store_chat_messages(video_id).await?;
 
-        if continuation.is_none() {
-            break;
-        }
-        println!(
-            "{}",
-            response
-                .continuation_contents
-                .live_chat_continuation
-                .actions
-                .unwrap_or_default()
-                .len()
-        );
-        // TODO: Move elsewhere
-        video.set_continuation_key(continuation);
-    }
-
-    // TODO: Reorganize video struct, add manager
-    //TODO: Write to file
     Ok(())
 }
