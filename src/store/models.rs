@@ -1,18 +1,25 @@
 use std::collections::HashSet;
 
+#[derive(Debug)]
 pub struct Video {
     id: String,
     title: String,
 }
+
+#[derive(Debug)]
 pub struct Message {
     content: String,
     author: String,
-    timestamp: u64,
+    timestamp: String,
 }
+
+#[derive(Debug)]
 pub struct Channel {
     id: String,
     name: String,
 }
+
+#[derive(Debug)]
 pub struct Emote {
     id: String,
     shortcut: String,
@@ -33,7 +40,7 @@ impl Video {
 }
 
 impl Message {
-    pub fn new(content: String, author: String, timestamp: u64) -> Self {
+    pub fn new(content: String, author: String, timestamp: String) -> Self {
         Message {
             content,
             author,

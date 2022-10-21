@@ -1,4 +1,6 @@
 use std::collections::HashSet;
+use std::thread;
+use std::time::Duration;
 
 use crate::store::models::{Aggregate, Channel, Emote, Message, Video};
 use crate::youtube::api::YoutubeApi;
@@ -52,11 +54,73 @@ where
     ) -> Result<Aggregate, Box<dyn std::error::Error>> {
         let video = Video::new(video_info.id, video_info.title);
         let channel = Channel::new(video_info.channel_id, video_info.channel_name);
-        let messages: Vec<Message> = vec![];
+        let mut messages: Vec<Message> = vec![];
         let emotes: HashSet<Emote> = HashSet::new();
-        let mut continuation_key = video_info.continuation_key;
 
-        //TODO: Parse
+        let api_key = video_info.api_key;
+        let mut continuation_key = Some(video_info.continuation_key);
+
+        loop {
+            let response = match continuation_key {
+                Some(continuation_key) => {
+                    self.youtube_api
+                        .get_live_chat(&api_key, &continuation_key)
+                        .await?
+                }
+                None => break,
+            };
+            // Update with new continuation key (if it exists)
+            continuation_key = match response
+                .continuation_contents
+                .live_chat_continuation
+                .continuations
+                .first()
+            {
+                Some(continuation) => continuation
+                    .live_chat_replay_continuation_data
+                    .as_ref()
+                    .map(|continuation_data| continuation_data.continuation.to_string()),
+                None => None,
+            };
+
+            if continuation_key.is_none() {
+                break;
+            }
+
+            for action in response
+                .continuation_contents
+                .live_chat_continuation
+                .actions
+                .unwrap()
+            {
+                let live_chat_message_renderer =
+                    match &action.replay_chat_item_action.actions[0].add_chat_item_action {
+                        Some(action) => match &action.item.live_chat_text_message_renderer {
+                            Some(message) => message,
+                            None => break,
+                        },
+                        None => break,
+                    };
+                let author = &live_chat_message_renderer.author_name.simple_text;
+                let timestamp = action.replay_chat_item_action.video_offset_time_msec;
+                let mut content = "".to_owned();
+                for item in &live_chat_message_renderer.message.runs {
+                    if item.text.is_some() {
+                        content.push_str(item.text.as_ref().unwrap().as_str());
+                    }
+                    if item.emoji.is_some() {
+                        content.push_str(match &item.emoji.as_ref().unwrap().shortcuts {
+                            Some(shortcuts) => shortcuts[0].as_str(),
+                            None => break,
+                        })
+                    }
+                }
+                let message = Message::new(content, author.clone(), timestamp);
+                messages.push(message);
+            }
+            thread::sleep(Duration::from_millis(250));
+            // TODO: Pull Emotes
+        }
 
         let aggregate = Aggregate {
             video,
