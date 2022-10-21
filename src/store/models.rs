@@ -5,7 +5,7 @@ pub struct Video {
 pub struct Message {
     content: String,
     author: String,
-    offset: String,
+    timestamp: u64,
 }
 pub struct Channel {
     id: String,
