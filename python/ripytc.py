@@ -7,6 +7,8 @@ from typing import Dict
 
 import requests
 
+PAUSE_BEFORE_NEW_REQUEST_S = 0.1
+
 
 def get_value_from_body(value: str, body: str) -> str | None:
     result1 = re.search(f'"{value}":"(.*?)",', r.text)
@@ -109,8 +111,7 @@ for video_id in sys.argv[1::]:
                 except KeyError:
                     continuation = None
 
-                print(counter)
-                sleep(0.25)
+                sleep(PAUSE_BEFORE_NEW_REQUEST_S)
     except KeyboardInterrupt:
         break
 stop = default_timer()
