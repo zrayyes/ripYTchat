@@ -118,7 +118,7 @@ where
                 let message = Message::new(content, author.clone(), timestamp);
                 messages.push(message);
             }
-            thread::sleep(Duration::from_millis(250));
+            thread::sleep(Duration::from_millis(100));
             // TODO: Pull Emotes
         }
 

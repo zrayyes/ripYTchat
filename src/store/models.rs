@@ -1,3 +1,4 @@
+use core::fmt;
 use std::collections::HashSet;
 
 #[derive(Debug)]
@@ -36,6 +37,12 @@ pub struct Aggregate {
 impl Video {
     pub fn new(id: String, title: String) -> Self {
         Video { id, title }
+    }
+}
+
+impl fmt::Display for Video {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}-{}", self.id, self.title)
     }
 }
 

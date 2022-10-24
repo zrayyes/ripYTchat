@@ -7,7 +7,7 @@ pub mod youtube;
 
 use handler::RequestHandler;
 use service::Service;
-use store::SQLStore;
+use store::FileStore;
 use youtube::api::{YoutubeApi, YoutubeApiClient};
 
 #[tokio::main]
@@ -20,7 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let video_id = &args[1];
-    let store: SQLStore = SQLStore {};
+    let store: FileStore = FileStore {};
     let youtube_api: YoutubeApiClient = YoutubeApiClient::init();
     let handler = RequestHandler { youtube_api };
     let service = Service { store, handler };
