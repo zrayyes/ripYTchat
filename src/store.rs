@@ -36,7 +36,9 @@ impl Store for FileStore {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let file_name = format!("{}.txt", video_aggregate.video);
         let mut file = File::create(file_name)?;
-        write!(file, "{}", video_aggregate.video)?;
+        for message in video_aggregate.messages {
+            writeln!(file, "{}", message)?;
+        }
         Ok(())
     }
 }

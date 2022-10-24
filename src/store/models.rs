@@ -56,6 +56,12 @@ impl Message {
     }
 }
 
+impl fmt::Display for Message {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}---{}---{}", self.timestamp, self.author, self.content)
+    }
+}
+
 impl Channel {
     pub fn new(id: String, name: String) -> Self {
         Channel { id, name }
