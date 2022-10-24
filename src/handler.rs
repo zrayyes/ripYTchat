@@ -154,3 +154,33 @@ fn get_key_value_from_body<'a>(
     };
     Ok(caps.get(1))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::youtube::api::MockYoutubeApi;
+    use mockall::predicate::*;
+
+    #[tokio::test]
+    async fn test_get_video_info_valid() -> Result<(), Box<dyn std::error::Error>> {
+        let fake_body = r#""continuation":"abc","INNERTUBE_API_KEY":"xyz","title":"MY_TITLE","author":"MY_CHANNEL","channelId":"0001","#;
+        let mut mock_api = MockYoutubeApi::new();
+        mock_api
+            .expect_get_video_page_body()
+            .with(eq("12345"))
+            .times(1)
+            .returning(|_| Ok(fake_body.to_string()));
+
+        let handler = RequestHandler {
+            youtube_api: mock_api,
+        };
+        let video_info = handler.get_video_info("12345").await?;
+        assert_eq!("12345", video_info.id);
+        assert_eq!("abc", video_info.continuation_key);
+        assert_eq!("xyz", video_info.api_key);
+        assert_eq!("MY_TITLE", video_info.title);
+        assert_eq!("MY_CHANNEL", video_info.channel_name);
+        assert_eq!("0001", video_info.channel_id);
+        Ok(())
+    }
+}
