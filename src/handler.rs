@@ -83,24 +83,21 @@ where
                 None => None,
             };
 
-            if continuation_key.is_none() {
-                break;
-            }
-
             for action in response
                 .continuation_contents
                 .live_chat_continuation
                 .actions
-                .unwrap()
+                .unwrap_or_default()
             {
                 let live_chat_message_renderer =
                     match &action.replay_chat_item_action.actions[0].add_chat_item_action {
                         Some(action) => match &action.item.live_chat_text_message_renderer {
                             Some(message) => message,
-                            None => break,
+                            None => continue,
                         },
-                        None => break,
+                        None => continue,
                     };
+
                 let author = &live_chat_message_renderer.author_name.simple_text;
                 let timestamp = action.replay_chat_item_action.video_offset_time_msec;
                 let mut content = "".to_owned();
@@ -118,6 +115,11 @@ where
                 let message = Message::new(content, author.clone(), timestamp);
                 messages.push(message);
             }
+
+            if continuation_key.is_none() {
+                break;
+            }
+
             thread::sleep(Duration::from_millis(100));
             // TODO: Pull Emotes
         }
@@ -159,7 +161,10 @@ fn get_key_value_from_body<'a>(
 mod tests {
     use super::*;
     use crate::youtube::api::MockYoutubeApi;
+    use crate::youtube::structs::LiveChatResponse;
     use mockall::predicate::*;
+    use std::fs;
+    use std::path::Path;
 
     #[tokio::test]
     async fn test_get_video_info_valid() -> Result<(), Box<dyn std::error::Error>> {
@@ -181,6 +186,37 @@ mod tests {
         assert_eq!("MY_TITLE", video_info.title);
         assert_eq!("MY_CHANNEL", video_info.channel_name);
         assert_eq!("0001", video_info.channel_id);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_all_chat_messages() -> Result<(), Box<dyn std::error::Error>> {
+        let file_path = Path::new("./tests/data/post_body");
+        let response: String = fs::read_to_string(file_path)?.parse()?;
+        let deserialized: LiveChatResponse = serde_json::from_str(&response).unwrap();
+
+        let mut mock_api = MockYoutubeApi::new();
+        mock_api
+            .expect_get_live_chat()
+            .times(1)
+            .returning(move |_, _| Ok(deserialized.clone()));
+
+        let handler = RequestHandler {
+            youtube_api: mock_api,
+        };
+
+        let video_info = VideoInfo {
+            id: "".into(),
+            api_key: "".into(),
+            continuation_key: "".into(),
+            title: "".into(),
+            channel_name: "()".into(),
+            channel_id: "()".into(),
+        };
+        let video_aggregate = handler.get_all_chat_messages(video_info).await?;
+
+        assert_eq!(video_aggregate.messages.len(), 100);
+
         Ok(())
     }
 }
