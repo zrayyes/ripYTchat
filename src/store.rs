@@ -20,7 +20,7 @@ pub struct SQLStore {}
 impl Store for SQLStore {
     async fn store_messages(
         &self,
-        video_aggregate: Aggregate,
+        _video_aggregate: Aggregate,
     ) -> Result<(), Box<dyn std::error::Error>> {
         todo!()
     }
